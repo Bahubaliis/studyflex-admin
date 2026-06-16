@@ -110,7 +110,6 @@
             <select id="chapterClass">
                 <option value="">-- Class --</option>
             </select>
-            <!-- Editable subject field (new) -->
             <input type="text" id="chapterSubjectInput" placeholder="Subject (e.g. Computer Science)">
             <input type="hidden" id="editingChapterKey2">
             <button class="btn-save" onclick="saveChapter()">Save Chapter</button>
@@ -135,12 +134,11 @@
         const auth = firebase.auth();
         const db = firebase.database();
 
-        // Auth state observer
+        // ---------- Auth ----------
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('login-card').style.display = 'none';
                 document.getElementById('admin-panel').style.display = 'block';
-                // Initial load of chapter list for stream selector
                 onStreamChange();
                 loadChapters();
             } else {
@@ -158,14 +156,727 @@
                 .catch(e => document.getElementById('loginError').innerText = e.message);
         }
 
-        function adminLogout() {
-            auth.signOut();
+        function adminLogout() { auth.signOut(); }
+    
+// -------- COMPLETE STREAM CHAPTER DATA (Option B) --------
+        const streamChapters = {
+            CBSE: [
+                // Class 9 Science (15 chapters)
+                {id:"CBSE-9-Science-1", name:"9 Sci 1. Matter in Our Surroundings"},
+                {id:"CBSE-9-Science-2", name:"9 Sci 2. Is Matter Around Us Pure"},
+                {id:"CBSE-9-Science-3", name:"9 Sci 3. Atoms and Molecules"},
+                {id:"CBSE-9-Science-4", name:"9 Sci 4. Structure of the Atom"},
+                {id:"CBSE-9-Science-5", name:"9 Sci 5. The Fundamental Unit of Life"},
+                {id:"CBSE-9-Science-6", name:"9 Sci 6. Tissues"},
+                {id:"CBSE-9-Science-7", name:"9 Sci 7. Diversity in Living Organisms"},
+                {id:"CBSE-9-Science-8", name:"9 Sci 8. Motion"},
+                {id:"CBSE-9-Science-9", name:"9 Sci 9. Force and Laws of Motion"},
+                {id:"CBSE-9-Science-10", name:"9 Sci 10. Gravitation"},
+                {id:"CBSE-9-Science-11", name:"9 Sci 11. Work and Energy"},
+                {id:"CBSE-9-Science-12", name:"9 Sci 12. Sound"},
+                {id:"CBSE-9-Science-13", name:"9 Sci 13. Why Do We Fall Ill"},
+                {id:"CBSE-9-Science-14", name:"9 Sci 14. Natural Resources"},
+                {id:"CBSE-9-Science-15", name:"9 Sci 15. Improvement in Food Resources"},
+                // Class 9 Maths (15)
+                {id:"CBSE-9-Maths-1", name:"9 Math 1. Number Systems"},
+                {id:"CBSE-9-Maths-2", name:"9 Math 2. Polynomials"},
+                {id:"CBSE-9-Maths-3", name:"9 Math 3. Coordinate Geometry"},
+                {id:"CBSE-9-Maths-4", name:"9 Math 4. Linear Equations in Two Variables"},
+                {id:"CBSE-9-Maths-5", name:"9 Math 5. Introduction to Euclid's Geometry"},
+                {id:"CBSE-9-Maths-6", name:"9 Math 6. Lines and Angles"},
+                {id:"CBSE-9-Maths-7", name:"9 Math 7. Triangles"},
+                {id:"CBSE-9-Maths-8", name:"9 Math 8. Quadrilaterals"},
+                {id:"CBSE-9-Maths-9", name:"9 Math 9. Areas of Parallelograms and Triangles"},
+                {id:"CBSE-9-Maths-10", name:"9 Math 10. Circles"},
+                {id:"CBSE-9-Maths-11", name:"9 Math 11. Constructions"},
+                {id:"CBSE-9-Maths-12", name:"9 Math 12. Heron's Formula"},
+                {id:"CBSE-9-Maths-13", name:"9 Math 13. Surface Areas and Volumes"},
+                {id:"CBSE-9-Maths-14", name:"9 Math 14. Statistics"},
+                {id:"CBSE-9-Maths-15", name:"9 Math 15. Probability"},
+                // Class 10 Science (13)
+                {id:"CBSE-10-Science-1", name:"10 Sci 1. Chemical Reactions and Equations"},
+                {id:"CBSE-10-Science-2", name:"10 Sci 2. Acids, Bases and Salts"},
+                {id:"CBSE-10-Science-3", name:"10 Sci 3. Metals and Non-metals"},
+                {id:"CBSE-10-Science-4", name:"10 Sci 4. Carbon and its Compounds"},
+                {id:"CBSE-10-Science-5", name:"10 Sci 5. Life Processes"},
+                {id:"CBSE-10-Science-6", name:"10 Sci 6. Control and Coordination"},
+                {id:"CBSE-10-Science-7", name:"10 Sci 7. How do Organisms Reproduce?"},
+                {id:"CBSE-10-Science-8", name:"10 Sci 8. Heredity and Evolution"},
+                {id:"CBSE-10-Science-9", name:"10 Sci 9. Light – Reflection and Refraction"},
+                {id:"CBSE-10-Science-10", name:"10 Sci 10. Human Eye and Colourful World"},
+                {id:"CBSE-10-Science-11", name:"10 Sci 11. Electricity"},
+                {id:"CBSE-10-Science-12", name:"10 Sci 12. Magnetic Effects of Electric Current"},
+                {id:"CBSE-10-Science-13", name:"10 Sci 13. Our Environment"},
+                // Class 10 Maths (15)
+                {id:"CBSE-10-Maths-1", name:"10 Math 1. Real Numbers"},
+                {id:"CBSE-10-Maths-2", name:"10 Math 2. Polynomials"},
+                {id:"CBSE-10-Maths-3", name:"10 Math 3. Pair of Linear Equations in Two Variables"},
+                {id:"CBSE-10-Maths-4", name:"10 Math 4. Quadratic Equations"},
+                {id:"CBSE-10-Maths-5", name:"10 Math 5. Arithmetic Progressions"},
+                {id:"CBSE-10-Maths-6", name:"10 Math 6. Triangles"},
+                {id:"CBSE-10-Maths-7", name:"10 Math 7. Coordinate Geometry"},
+                {id:"CBSE-10-Maths-8", name:"10 Math 8. Introduction to Trigonometry"},
+                {id:"CBSE-10-Maths-9", name:"10 Math 9. Some Applications of Trigonometry"},
+                {id:"CBSE-10-Maths-10", name:"10 Math 10. Circles"},
+                {id:"CBSE-10-Maths-11", name:"10 Math 11. Constructions"},
+                {id:"CBSE-10-Maths-12", name:"10 Math 12. Areas Related to Circles"},
+                {id:"CBSE-10-Maths-13", name:"10 Math 13. Surface Areas and Volumes"},
+                {id:"CBSE-10-Maths-14", name:"10 Math 14. Statistics"},
+                {id:"CBSE-10-Maths-15", name:"10 Math 15. Probability"},
+                // Class 11 Physics (15), Chemistry (14), Maths (16), Biology (22)
+                {id:"CBSE-11-Physics-1", name:"11 Phy 1. Physical World"},
+                {id:"CBSE-11-Physics-2", name:"11 Phy 2. Units and Measurements"},
+                {id:"CBSE-11-Physics-3", name:"11 Phy 3. Motion in a Straight Line"},
+                {id:"CBSE-11-Physics-4", name:"11 Phy 4. Motion in a Plane"},
+                {id:"CBSE-11-Physics-5", name:"11 Phy 5. Laws of Motion"},
+                {id:"CBSE-11-Physics-6", name:"11 Phy 6. Work, Energy and Power"},
+                {id:"CBSE-11-Physics-7", name:"11 Phy 7. System of Particles and Rotational Motion"},
+                {id:"CBSE-11-Physics-8", name:"11 Phy 8. Gravitation"},
+                {id:"CBSE-11-Physics-9", name:"11 Phy 9. Mechanical Properties of Solids"},
+                {id:"CBSE-11-Physics-10", name:"11 Phy 10. Mechanical Properties of Fluids"},
+                {id:"CBSE-11-Physics-11", name:"11 Phy 11. Thermal Properties of Matter"},
+                {id:"CBSE-11-Physics-12", name:"11 Phy 12. Thermodynamics"},
+                {id:"CBSE-11-Physics-13", name:"11 Phy 13. Kinetic Theory"},
+                {id:"CBSE-11-Physics-14", name:"11 Phy 14. Oscillations"},
+                {id:"CBSE-11-Physics-15", name:"11 Phy 15. Waves"},
+                {id:"CBSE-11-Chemistry-1", name:"11 Chem 1. Some Basic Concepts of Chemistry"},
+                {id:"CBSE-11-Chemistry-2", name:"11 Chem 2. Structure of Atom"},
+                {id:"CBSE-11-Chemistry-3", name:"11 Chem 3. Classification of Elements and Periodicity in Properties"},
+                {id:"CBSE-11-Chemistry-4", name:"11 Chem 4. Chemical Bonding and Molecular Structure"},
+                {id:"CBSE-11-Chemistry-5", name:"11 Chem 5. States of Matter"},
+                {id:"CBSE-11-Chemistry-6", name:"11 Chem 6. Thermodynamics"},
+                {id:"CBSE-11-Chemistry-7", name:"11 Chem 7. Equilibrium"},
+                {id:"CBSE-11-Chemistry-8", name:"11 Chem 8. Redox Reactions"},
+                {id:"CBSE-11-Chemistry-9", name:"11 Chem 9. Hydrogen"},
+                {id:"CBSE-11-Chemistry-10", name:"11 Chem 10. The s-Block Elements"},
+                {id:"CBSE-11-Chemistry-11", name:"11 Chem 11. The p-Block Elements"},
+                {id:"CBSE-11-Chemistry-12", name:"11 Chem 12. Organic Chemistry – Some Basic Principles and Techniques"},
+                {id:"CBSE-11-Chemistry-13", name:"11 Chem 13. Hydrocarbons"},
+                {id:"CBSE-11-Chemistry-14", name:"11 Chem 14. Environmental Chemistry"},
+                {id:"CBSE-11-Maths-1", name:"11 Math 1. Sets"},
+                {id:"CBSE-11-Maths-2", name:"11 Math 2. Relations and Functions"},
+                {id:"CBSE-11-Maths-3", name:"11 Math 3. Trigonometric Functions"},
+                {id:"CBSE-11-Maths-4", name:"11 Math 4. Principle of Mathematical Induction"},
+                {id:"CBSE-11-Maths-5", name:"11 Math 5. Complex Numbers and Quadratic Equations"},
+                {id:"CBSE-11-Maths-6", name:"11 Math 6. Linear Inequalities"},
+                {id:"CBSE-11-Maths-7", name:"11 Math 7. Permutations and Combinations"},
+                {id:"CBSE-11-Maths-8", name:"11 Math 8. Binomial Theorem"},
+                {id:"CBSE-11-Maths-9", name:"11 Math 9. Sequences and Series"},
+                {id:"CBSE-11-Maths-10", name:"11 Math 10. Straight Lines"},
+                {id:"CBSE-11-Maths-11", name:"11 Math 11. Conic Sections"},
+                {id:"CBSE-11-Maths-12", name:"11 Math 12. Introduction to Three Dimensional Geometry"},
+                {id:"CBSE-11-Maths-13", name:"11 Math 13. Limits and Derivatives"},
+                {id:"CBSE-11-Maths-14", name:"11 Math 14. Mathematical Reasoning"},
+                {id:"CBSE-11-Maths-15", name:"11 Math 15. Statistics"},
+                {id:"CBSE-11-Maths-16", name:"11 Math 16. Probability"},
+                {id:"CBSE-11-Biology-1", name:"11 Bio 1. The Living World"},
+                {id:"CBSE-11-Biology-2", name:"11 Bio 2. Biological Classification"},
+                {id:"CBSE-11-Biology-3", name:"11 Bio 3. Plant Kingdom"},
+                {id:"CBSE-11-Biology-4", name:"11 Bio 4. Animal Kingdom"},
+                {id:"CBSE-11-Biology-5", name:"11 Bio 5. Morphology of Flowering Plants"},
+                {id:"CBSE-11-Biology-6", name:"11 Bio 6. Anatomy of Flowering Plants"},
+                {id:"CBSE-11-Biology-7", name:"11 Bio 7. Structural Organisation in Animals"},
+                {id:"CBSE-11-Biology-8", name:"11 Bio 8. Cell: The Unit of Life"},
+                {id:"CBSE-11-Biology-9", name:"11 Bio 9. Biomolecules"},
+                {id:"CBSE-11-Biology-10", name:"11 Bio 10. Cell Cycle and Cell Division"},
+                {id:"CBSE-11-Biology-11", name:"11 Bio 11. Transport in Plants"},
+                {id:"CBSE-11-Biology-12", name:"11 Bio 12. Mineral Nutrition"},
+                {id:"CBSE-11-Biology-13", name:"11 Bio 13. Photosynthesis in Higher Plants"},
+                {id:"CBSE-11-Biology-14", name:"11 Bio 14. Respiration in Plants"},
+                {id:"CBSE-11-Biology-15", name:"11 Bio 15. Plant Growth and Development"},
+                {id:"CBSE-11-Biology-16", name:"11 Bio 16. Digestion and Absorption"},
+                {id:"CBSE-11-Biology-17", name:"11 Bio 17. Breathing and Exchange of Gases"},
+                {id:"CBSE-11-Biology-18", name:"11 Bio 18. Body Fluids and Circulation"},
+                {id:"CBSE-11-Biology-19", name:"11 Bio 19. Excretory Products and their Elimination"},
+                {id:"CBSE-11-Biology-20", name:"11 Bio 20. Locomotion and Movement"},
+                {id:"CBSE-11-Biology-21", name:"11 Bio 21. Neural Control and Coordination"},
+                {id:"CBSE-11-Biology-22", name:"11 Bio 22. Chemical Coordination and Integration"},
+                // Class 12 Physics (14), Chemistry (16), Maths (13), Biology (16)
+                {id:"CBSE-12-Physics-1", name:"12 Phy 1. Electric Charges and Fields"},
+                {id:"CBSE-12-Physics-2", name:"12 Phy 2. Electrostatic Potential and Capacitance"},
+                {id:"CBSE-12-Physics-3", name:"12 Phy 3. Current Electricity"},
+                {id:"CBSE-12-Physics-4", name:"12 Phy 4. Moving Charges and Magnetism"},
+                {id:"CBSE-12-Physics-5", name:"12 Phy 5. Magnetism and Matter"},
+                {id:"CBSE-12-Physics-6", name:"12 Phy 6. Electromagnetic Induction"},
+                {id:"CBSE-12-Physics-7", name:"12 Phy 7. Alternating Current"},
+                {id:"CBSE-12-Physics-8", name:"12 Phy 8. Electromagnetic Waves"},
+                {id:"CBSE-12-Physics-9", name:"12 Phy 9. Ray Optics and Optical Instruments"},
+                {id:"CBSE-12-Physics-10", name:"12 Phy 10. Wave Optics"},
+                {id:"CBSE-12-Physics-11", name:"12 Phy 11. Dual Nature of Radiation and Matter"},
+                {id:"CBSE-12-Physics-12", name:"12 Phy 12. Atoms"},
+                {id:"CBSE-12-Physics-13", name:"12 Phy 13. Nuclei"},
+                {id:"CBSE-12-Physics-14", name:"12 Phy 14. Semiconductor Electronics"},
+                {id:"CBSE-12-Chemistry-1", name:"12 Chem 1. The Solid State"},
+                {id:"CBSE-12-Chemistry-2", name:"12 Chem 2. Solutions"},
+                {id:"CBSE-12-Chemistry-3", name:"12 Chem 3. Electrochemistry"},
+                {id:"CBSE-12-Chemistry-4", name:"12 Chem 4. Chemical Kinetics"},
+                {id:"CBSE-12-Chemistry-5", name:"12 Chem 5. Surface Chemistry"},
+                {id:"CBSE-12-Chemistry-6", name:"12 Chem 6. General Principles and Processes of Isolation of Elements"},
+                                     {id:"CBSE-12-Chemistry-7", name:"12 Chem 7. The p-Block Elements"},
+                {id:"CBSE-12-Chemistry-8", name:"12 Chem 8. The d- and f-Block Elements"},
+                {id:"CBSE-12-Chemistry-9", name:"12 Chem 9. Coordination Compounds"},
+                {id:"CBSE-12-Chemistry-10", name:"12 Chem 10. Haloalkanes and Haloarenes"},
+                {id:"CBSE-12-Chemistry-11", name:"12 Chem 11. Alcohols, Phenols and Ethers"},
+                {id:"CBSE-12-Chemistry-12", name:"12 Chem 12. Aldehydes, Ketones and Carboxylic Acids"},
+                {id:"CBSE-12-Chemistry-13", name:"12 Chem 13. Amines"},
+                {id:"CBSE-12-Chemistry-14", name:"12 Chem 14. Biomolecules"},
+                {id:"CBSE-12-Chemistry-15", name:"12 Chem 15. Polymers"},
+                {id:"CBSE-12-Chemistry-16", name:"12 Chem 16. Chemistry in Everyday Life"},
+                {id:"CBSE-12-Maths-1", name:"12 Math 1. Relations and Functions"},
+                {id:"CBSE-12-Maths-2", name:"12 Math 2. Inverse Trigonometric Functions"},
+                {id:"CBSE-12-Maths-3", name:"12 Math 3. Matrices"},
+                {id:"CBSE-12-Maths-4", name:"12 Math 4. Determinants"},
+                {id:"CBSE-12-Maths-5", name:"12 Math 5. Continuity and Differentiability"},
+                {id:"CBSE-12-Maths-6", name:"12 Math 6. Application of Derivatives"},
+                {id:"CBSE-12-Maths-7", name:"12 Math 7. Integrals"},
+                {id:"CBSE-12-Maths-8", name:"12 Math 8. Application of Integrals"},
+                {id:"CBSE-12-Maths-9", name:"12 Math 9. Differential Equations"},
+                {id:"CBSE-12-Maths-10", name:"12 Math 10. Vector Algebra"},
+                {id:"CBSE-12-Maths-11", name:"12 Math 11. Three Dimensional Geometry"},
+                {id:"CBSE-12-Maths-12", name:"12 Math 12. Linear Programming"},
+                {id:"CBSE-12-Maths-13", name:"12 Math 13. Probability"},
+                {id:"CBSE-12-Biology-1", name:"12 Bio 1. Reproduction in Organisms"},
+                {id:"CBSE-12-Biology-2", name:"12 Bio 2. Sexual Reproduction in Flowering Plants"},
+                {id:"CBSE-12-Biology-3", name:"12 Bio 3. Human Reproduction"},
+                {id:"CBSE-12-Biology-4", name:"12 Bio 4. Reproductive Health"},
+                {id:"CBSE-12-Biology-5", name:"12 Bio 5. Principles of Inheritance and Variation"},
+                {id:"CBSE-12-Biology-6", name:"12 Bio 6. Molecular Basis of Inheritance"},
+                {id:"CBSE-12-Biology-7", name:"12 Bio 7. Evolution"},
+                {id:"CBSE-12-Biology-8", name:"12 Bio 8. Human Health and Disease"},
+                {id:"CBSE-12-Biology-9", name:"12 Bio 9. Strategies for Enhancement in Food Production"},
+                {id:"CBSE-12-Biology-10", name:"12 Bio 10. Microbes in Human Welfare"},
+                {id:"CBSE-12-Biology-11", name:"12 Bio 11. Biotechnology: Principles and Processes"},
+                {id:"CBSE-12-Biology-12", name:"12 Bio 12. Biotechnology and its Applications"},
+                    {id:"CBSE-12-Biology-13", name:"12 Bio 13. Organisms and Populations"},
+                {id:"CBSE-12-Biology-14", name:"12 Bio 14. Ecosystem"},
+                {id:"CBSE-12-Biology-15", name:"12 Bio 15. Biodiversity and Conservation"},
+                {id:"CBSE-12-Biology-16", name:"12 Bio 16. Environmental Issues"}
+            ],
+            JEE: [
+                // Class 11 Physics (15), Chemistry (14), Maths (16)
+                {id:"JEE-11-Physics-1", name:"11 Phy 1. Physical World"},
+                {id:"JEE-11-Physics-2", name:"11 Phy 2. Units and Measurements"},
+                {id:"JEE-11-Physics-3", name:"11 Phy 3. Motion in a Straight Line"},
+                {id:"JEE-11-Physics-4", name:"11 Phy 4. Motion in a Plane"},
+                {id:"JEE-11-Physics-5", name:"11 Phy 5. Laws of Motion"},
+                {id:"JEE-11-Physics-6", name:"11 Phy 6. Work, Energy and Power"},
+                {id:"JEE-11-Physics-7", name:"11 Phy 7. System of Particles and Rotational Motion"},
+                {id:"JEE-11-Physics-8", name:"11 Phy 8. Gravitation"},
+                {id:"JEE-11-Physics-9", name:"11 Phy 9. Mechanical Properties of Solids"},
+                {id:"JEE-11-Physics-10", name:"11 Phy 10. Mechanical Properties of Fluids"},
+                {id:"JEE-11-Physics-11", name:"11 Phy 11. Thermal Properties of Matter"},
+                {id:"JEE-11-Physics-12", name:"11 Phy 12. Thermodynamics"},
+                {id:"JEE-11-Physics-13", name:"11 Phy 13. Kinetic Theory"},
+                {id:"JEE-11-Physics-14", name:"11 Phy 14. Oscillations"},
+                {id:"JEE-11-Physics-15", name:"11 Phy 15. Waves"},
+                {id:"JEE-11-Chemistry-1", name:"11 Chem 1. Some Basic Concepts of Chemistry"},
+                {id:"JEE-11-Chemistry-2", name:"11 Chem 2. Structure of Atom"},
+                {id:"JEE-11-Chemistry-3", name:"11 Chem 3. Classification of Elements and Periodicity in Properties"},
+                {id:"JEE-11-Chemistry-4", name:"11 Chem 4. Chemical Bonding and Molecular Structure"},
+                {id:"JEE-11-Chemistry-5", name:"11 Chem 5. States of Matter"},
+                {id:"JEE-11-Chemistry-6", name:"11 Chem 6. Thermodynamics"},
+                {id:"JEE-11-Chemistry-7", name:"11 Chem 7. Equilibrium"},
+                {id:"JEE-11-Chemistry-8", name:"11 Chem 8. Redox Reactions"},
+                {id:"JEE-11-Chemistry-9", name:"11 Chem 9. Hydrogen"},
+                {id:"JEE-11-Chemistry-10", name:"11 Chem 10. The s-Block Elements"},
+                {id:"JEE-11-Chemistry-11", name:"11 Chem 11. The p-Block Elements"},
+                {id:"JEE-11-Chemistry-12", name:"11 Chem 12. Organic Chemistry – Some Basic Principles and Techniques"},
+                {id:"JEE-11-Chemistry-13", name:"11 Chem 13. Hydrocarbons"},
+                {id:"JEE-11-Chemistry-14", name:"11 Chem 14. Environmental Chemistry"},
+                {id:"JEE-11-Maths-1", name:"11 Math 1. Sets"},
+                {id:"JEE-11-Maths-2", name:"11 Math 2. Relations and Functions"},
+                {id:"JEE-11-Maths-3", name:"11 Math 3. Trigonometric Functions"},
+                {id:"JEE-11-Maths-4", name:"11 Math 4. Principle of Mathematical Induction"},
+                {id:"JEE-11-Maths-5", name:"11 Math 5. Complex Numbers and Quadratic Equations"},
+                {id:"JEE-11-Maths-6", name:"11 Math 6. Linear Inequalities"},
+                {id:"JEE-11-Maths-7", name:"11 Math 7. Permutations and Combinations"},
+                {id:"JEE-11-Maths-8", name:"11 Math 8. Binomial Theorem"},
+                {id:"JEE-11-Maths-9", name:"11 Math 9. Sequences and Series"},
+                {id:"JEE-11-Maths-10", name:"11 Math 10. Straight Lines"},
+                {id:"JEE-11-Maths-11", name:"11 Math 11. Conic Sections"},
+                {id:"JEE-11-Maths-12", name:"11 Math 12. Introduction to Three Dimensional Geometry"},
+                {id:"JEE-11-Maths-13", name:"11 Math 13. Limits and Derivatives"},
+                {id:"JEE-11-Maths-14", name:"11 Math 14. Mathematical Reasoning"},
+                {id:"JEE-11-Maths-15", name:"11 Math 15. Statistics"},
+                {id:"JEE-11-Maths-16", name:"11 Math 16. Probability"},
+                // Class 12 Physics (14), Chemistry (16), Maths (13)
+                {id:"JEE-12-Physics-1", name:"12 Phy 1. Electric Charges and Fields"},
+                {id:"JEE-12-Physics-2", name:"12 Phy 2. Electrostatic Potential and Capacitance"},
+                {id:"JEE-12-Physics-3", name:"12 Phy 3. Current Electricity"},
+                {id:"JEE-12-Physics-4", name:"12 Phy 4. Moving Charges and Magnetism"},
+                {id:"JEE-12-Physics-5", name:"12 Phy 5. Magnetism and Matter"},
+                {id:"JEE-12-Physics-6", name:"12 Phy 6. Electromagnetic Induction"},
+                {id:"JEE-12-Physics-7", name:"12 Phy 7. Alternating Current"},
+                {id:"JEE-12-Physics-8", name:"12 Phy 8. Electromagnetic Waves"},
+                {id:"JEE-12-Physics-9", name:"12 Phy 9. Ray Optics and Optical Instruments"},
+                {id:"JEE-12-Physics-10", name:"12 Phy 10. Wave Optics"},
+                {id:"JEE-12-Physics-11", name:"12 Phy 11. Dual Nature of Radiation and Matter"},
+                {id:"JEE-12-Physics-12", name:"12 Phy 12. Atoms"},
+                {id:"JEE-12-Physics-13", name:"12 Phy 13. Nuclei"},
+                {id:"JEE-12-Physics-14", name:"12 Phy 14. Semiconductor Electronics"},
+                {id:"JEE-12-Chemistry-1", name:"12 Chem 1. The Solid State"},
+                {id:"JEE-12-Chemistry-2", name:"12 Chem 2. Solutions"},
+                {id:"JEE-12-Chemistry-3", name:"12 Chem 3. Electrochemistry"},
+                {id:"JEE-12-Chemistry-4", name:"12 Chem 4. Chemical Kinetics"},
+                {id:"JEE-12-Chemistry-5", name:"12 Chem 5. Surface Chemistry"},
+                {id:"JEE-12-Chemistry-6", name:"12 Chem 6. General Principles and Processes of Isolation of Elements"},
+                                {id:"JEE-12-Chemistry-7", name:"12 Chem 7. The p-Block Elements"},
+                {id:"JEE-12-Chemistry-8", name:"12 Chem 8. The d- and f-Block Elements"},
+                {id:"JEE-12-Chemistry-9", name:"12 Chem 9. Coordination Compounds"},
+                {id:"JEE-12-Chemistry-10", name:"12 Chem 10. Haloalkanes and Haloarenes"},
+                {id:"JEE-12-Chemistry-11", name:"12 Chem 11. Alcohols, Phenols and Ethers"},
+                {id:"JEE-12-Chemistry-12", name:"12 Chem 12. Aldehydes, Ketones and Carboxylic Acids"},
+                {id:"JEE-12-Chemistry-13", name:"12 Chem 13. Amines"},
+                {id:"JEE-12-Chemistry-14", name:"12 Chem 14. Biomolecules"},
+                {id:"JEE-12-Chemistry-15", name:"12 Chem 15. Polymers"},
+                {id:"JEE-12-Chemistry-16", name:"12 Chem 16. Chemistry in Everyday Life"},
+                {id:"JEE-12-Maths-1", name:"12 Math 1. Relations and Functions"},
+                {id:"JEE-12-Maths-2", name:"12 Math 2. Inverse Trigonometric Functions"},
+                {id:"JEE-12-Maths-3", name:"12 Math 3. Matrices"},
+                {id:"JEE-12-Maths-4", name:"12 Math 4. Determinants"},
+                {id:"JEE-12-Maths-5", name:"12 Math 5. Continuity and Differentiability"},
+                {id:"JEE-12-Maths-6", name:"12 Math 6. Application of Derivatives"},
+                {id:"JEE-12-Maths-7", name:"12 Math 7. Integrals"},
+                {id:"JEE-12-Maths-8", name:"12 Math 8. Application of Integrals"},
+                {id:"JEE-12-Maths-9", name:"12 Math 9. Differential Equations"},
+                {id:"JEE-12-Maths-10", name:"12 Math 10. Vector Algebra"},
+                {id:"JEE-12-Maths-11", name:"12 Math 11. Three Dimensional Geometry"},
+                {id:"JEE-12-Maths-12", name:"12 Math 12. Linear Programming"},
+                {id:"JEE-12-Maths-13", name:"12 Math 13. Probability"}
+            ],
+            NEET: [
+                // Physics (11+12), Chemistry (11+12), Biology (11+12) – no Maths
+                {id:"NEET-11-Physics-1", name:"11 Phy 1. Physical World"},
+                {id:"NEET-11-Physics-2", name:"11 Phy 2. Units and Measurements"},
+                {id:"NEET-11-Physics-3", name:"11 Phy 3. Motion in a Straight Line"},
+                {id:"NEET-11-Physics-4", name:"11 Phy 4. Motion in a Plane"},
+                {id:"NEET-11-Physics-5", name:"11 Phy 5. Laws of Motion"},
+                {id:"NEET-11-Physics-6", name:"11 Phy 6. Work, Energy and Power"},
+                {id:"NEET-11-Physics-7", name:"11 Phy 7. System of Particles and Rotational Motion"},
+                {id:"NEET-11-Physics-8", name:"11 Phy 8. Gravitation"},
+                {id:"NEET-11-Physics-9", name:"11 Phy 9. Mechanical Properties of Solids"},
+                {id:"NEET-11-Physics-10", name:"11 Phy 10. Mechanical Properties of Fluids"},
+                {id:"NEET-11-Physics-11", name:"11 Phy 11. Thermal Properties of Matter"},
+                {id:"NEET-11-Physics-12", name:"11 Phy 12. Thermodynamics"},
+                {id:"NEET-11-Physics-13", name:"11 Phy 13. Kinetic Theory"},
+                {id:"NEET-11-Physics-14", name:"11 Phy 14. Oscillations"},
+                {id:"NEET-11-Physics-15", name:"11 Phy 15. Waves"},
+                {id:"NEET-12-Physics-1", name:"12 Phy 1. Electric Charges and Fields"},
+                {id:"NEET-12-Physics-2", name:"12 Phy 2. Electrostatic Potential and Capacitance"},
+                {id:"NEET-12-Physics-3", name:"12 Phy 3. Current Electricity"},
+                {id:"NEET-12-Physics-4", name:"12 Phy 4. Moving Charges and Magnetism"},
+                {id:"NEET-12-Physics-5", name:"12 Phy 5. Magnetism and Matter"},
+                {id:"NEET-12-Physics-6", name:"12 Phy 6. Electromagnetic Induction"},
+                {id:"NEET-12-Physics-7", name:"12 Phy 7. Alternating Current"},
+                {id:"NEET-12-Physics-8", name:"12 Phy 8. Electromagnetic Waves"},
+                {id:"NEET-12-Physics-9", name:"12 Phy 9. Ray Optics and Optical Instruments"},
+                {id:"NEET-12-Physics-10", name:"12 Phy 10. Wave Optics"},
+                {id:"NEET-12-Physics-11", name:"12 Phy 11. Dual Nature of Radiation and Matter"},
+                {id:"NEET-12-Physics-12", name:"12 Phy 12. Atoms"},
+                {id:"NEET-12-Physics-13", name:"12 Phy 13. Nuclei"},
+                {id:"NEET-12-Physics-14", name:"12 Phy 14. Semiconductor Electronics"},
+                // Chemistry 11+12 (same as JEE/CBSE)
+                {id:"NEET-11-Chemistry-1", name:"11 Chem 1. Some Basic Concepts of Chemistry"},
+                {id:"NEET-11-Chemistry-2", name:"11 Chem 2. Structure of Atom"},
+                {id:"NEET-11-Chemistry-3", name:"11 Chem 3. Classification of Elements and Periodicity in Properties"},
+                {id:"NEET-11-Chemistry-4", name:"11 Chem 4. Chemical Bonding and Molecular Structure"},
+                {id:"NEET-11-Chemistry-5", name:"11 Chem 5. States of Matter"},
+                {id:"NEET-11-Chemistry-6", name:"11 Chem 6. Thermodynamics"},
+                {id:"NEET-11-Chemistry-7", name:"11 Chem 7. Equilibrium"},
+                {id:"NEET-11-Chemistry-8", name:"11 Chem 8. Redox Reactions"},
+                {id:"NEET-11-Chemistry-9", name:"11 Chem 9. Hydrogen"},
+                {id:"NEET-11-Chemistry-10", name:"11 Chem 10. The s-Block Elements"},
+                {id:"NEET-11-Chemistry-11", name:"11 Chem 11. The p-Block Elements"},
+                {id:"NEET-11-Chemistry-12", name:"11 Chem 12. Organic Chemistry – Some Basic Principles and Techniques"},
+                {id:"NEET-11-Chemistry-13", name:"11 Chem 13. Hydrocarbons"},
+                {id:"NEET-11-Chemistry-14", name:"11 Chem 14. Environmental Chemistry"},
+                {id:"NEET-12-Chemistry-1", name:"12 Chem 1. The Solid State"},
+                {id:"NEET-12-Chemistry-2", name:"12 Chem 2. Solutions"},
+                {id:"NEET-12-Chemistry-3", name:"12 Chem 3. Electrochemistry"},
+                {id:"NEET-12-Chemistry-4", name:"12 Chem 4. Chemical Kinetics"},
+                {id:"NEET-12-Chemistry-5", name:"12 Chem 5. Surface Chemistry"},
+                {id:"NEET-12-Chemistry-6", name:"12 Chem 6. General Principles and Processes of Isolation of Elements"},
+                {id:"NEET-12-Chemistry-7", name:"12 Chem 7. The p-Block Elements"},
+                {id:"NEET-12-Chemistry-8", name:"12 Chem 8. The d- and f-Block Elements"},
+                {id:"NEET-12-Chemistry-9", name:"12 Chem 9. Coordination Compounds"},
+                {id:"NEET-12-Chemistry-10", name:"12 Chem 10. Haloalkanes and Haloarenes"},
+                {id:"NEET-12-Chemistry-11", name:"12 Chem 11. Alcohols, Phenols and Ethers"},
+                {id:"NEET-12-Chemistry-12", name:"12 Chem 12. Aldehydes, Ketones and Carboxylic Acids"},
+                {id:"NEET-12-Chemistry-13", name:"12 Chem 13. Amines"},
+                {id:"NEET-12-Chemistry-14", name:"12 Chem 14. Biomolecules"},
+                {id:"NEET-12-Chemistry-15", name:"12 Chem 15. Polymers"},
+                {id:"NEET-12-Chemistry-16", name:"12 Chem 16. Chemistry in Everyday Life"},
+                     // Biology 11+12
+                {id:"NEET-11-Biology-1", name:"11 Bio 1. The Living World"},
+                {id:"NEET-11-Biology-2", name:"11 Bio 2. Biological Classification"},
+                {id:"NEET-11-Biology-3", name:"11 Bio 3. Plant Kingdom"},
+                {id:"NEET-11-Biology-4", name:"11 Bio 4. Animal Kingdom"},
+                {id:"NEET-11-Biology-5", name:"11 Bio 5. Morphology of Flowering Plants"},
+                {id:"NEET-11-Biology-6", name:"11 Bio 6. Anatomy of Flowering Plants"},
+                {id:"NEET-11-Biology-7", name:"11 Bio 7. Structural Organisation in Animals"},
+                {id:"NEET-11-Biology-8", name:"11 Bio 8. Cell: The Unit of Life"},
+                {id:"NEET-11-Biology-9", name:"11 Bio 9. Biomolecules"},
+                {id:"NEET-11-Biology-10", name:"11 Bio 10. Cell Cycle and Cell Division"},
+                {id:"NEET-11-Biology-11", name:"11 Bio 11. Transport in Plants"},
+                {id:"NEET-11-Biology-12", name:"11 Bio 12. Mineral Nutrition"},
+                {id:"NEET-11-Biology-13", name:"11 Bio 13. Photosynthesis in Higher Plants"},
+                {id:"NEET-11-Biology-14", name:"11 Bio 14. Respiration in Plants"},
+                {id:"NEET-11-Biology-15", name:"11 Bio 15. Plant Growth and Development"},
+                {id:"NEET-11-Biology-16", name:"11 Bio 16. Digestion and Absorption"},
+                {id:"NEET-11-Biology-17", name:"11 Bio 17. Breathing and Exchange of Gases"},
+                {id:"NEET-11-Biology-18", name:"11 Bio 18. Body Fluids and Circulation"},
+                {id:"NEET-11-Biology-19", name:"11 Bio 19. Excretory Products and their Elimination"},
+                {id:"NEET-11-Biology-20", name:"11 Bio 20. Locomotion and Movement"},
+                {id:"NEET-11-Biology-21", name:"11 Bio 21. Neural Control and Coordination"},
+                {id:"NEET-11-Biology-22", name:"11 Bio 22. Chemical Coordination and Integration"},
+                {id:"NEET-12-Biology-1", name:"12 Bio 1. Reproduction in Organisms"},
+                {id:"NEET-12-Biology-2", name:"12 Bio 2. Sexual Reproduction in Flowering Plants"},
+                {id:"NEET-12-Biology-3", name:"12 Bio 3. Human Reproduction"},
+                {id:"NEET-12-Biology-4", name:"12 Bio 4. Reproductive Health"},
+                {id:"NEET-12-Biology-5", name:"12 Bio 5. Principles of Inheritance and Variation"},
+                {id:"NEET-12-Biology-6", name:"12 Bio 6. Molecular Basis of Inheritance"},
+                {id:"NEET-12-Biology-7", name:"12 Bio 7. Evolution"},
+                {id:"NEET-12-Biology-8", name:"12 Bio 8. Human Health and Disease"},
+                {id:"NEET-12-Biology-9", name:"12 Bio 9. Strategies for Enhancement in Food Production"},
+                {id:"NEET-12-Biology-10", name:"12 Bio 10. Microbes in Human Welfare"},
+                {id:"NEET-12-Biology-11", name:"12 Bio 11. Biotechnology: Principles and Processes"},
+                {id:"NEET-12-Biology-12", name:"12 Bio 12. Biotechnology and its Applications"},
+                {id:"NEET-12-Biology-13", name:"12 Bio 13. Organisms and Populations"},
+                {id:"NEET-12-Biology-14", name:"12 Bio 14. Ecosystem"},
+                {id:"NEET-12-Biology-15", name:"12 Bio 15. Biodiversity and Conservation"},
+                {id:"NEET-12-Biology-16", name:"12 Bio 16. Environmental Issues"}
+            ]
+        };
+                
+
+
+
+
+
+
+
+        // ================== STREAM CHANGE ==================
+        function onStreamChange() {
+            const stream = document.getElementById('streamSelect').value;
+            const chapterSelect = document.getElementById('chapterSelect');
+            chapterSelect.innerHTML = '<option value="">-- Select Chapter --</option>';
+            document.getElementById('currentChapterId').value = '';
+            if (!stream || !streamChapters[stream]) return;
+            streamChapters[stream].forEach(ch => {
+                const opt = document.createElement('option');
+                opt.value = ch.id;
+                opt.textContent = ch.name;
+                chapterSelect.appendChild(opt);
+            });
         }
 
-        // ---------- Rest of admin functions (unchanged from previous admin.html) ----------
-        const streamChapters = { /* ... full chapter lists as before ... */ };
-        // ... (Include all the previous JavaScript for resources, quizzes, flashcards, chapters, stream selection)
-        // I'll include a placeholder – you must copy the complete functions from the last working admin.html
+        function loadAll() { loadResources(); loadQuizzes(); loadFlashcards(); }
+
+        function copyChapterId() {
+            const id = document.getElementById('currentChapterId').value;
+            if (!id) return alert('Select a chapter first');
+            navigator.clipboard.writeText(id).then(() => alert('Copied: ' + id));
+        }
+
+        // ================== RESOURCES ==================
+        let editingResourceKey = null;
+        function loadResources() {
+            const id = document.getElementById('chapterSelect').value;
+            if (!id) {
+                document.getElementById('resourcesList').innerHTML = 'Select a chapter first.';
+                document.getElementById('resCount').textContent = '';
+                return;
+            }
+            db.ref('resources/' + id).on('value', snap => {
+                let html = '';
+                let count = 0;
+                snap.forEach(child => {
+                    const r = child.val();
+                    const key = child.key;
+                    count++;
+                    html += `<div class="item">
+                        <span>${r.title} (${r.type})</span>
+                        <div>
+                            <button class="btn-del" onclick="editResource('${id}','${key}','${r.title}','${r.url}','${r.type}')" style="background:#FF9800;">Edit</button>
+                            <button class="btn-del" onclick="deleteResource('${id}','${key}')">Del</button>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('resourcesList').innerHTML = html;
+                document.getElementById('resCount').textContent = `(${count} items)`;
+            });
+        }
+
+        function editResource(chapterId, key, title, url, type) {
+            document.getElementById('resTitle').value = title;
+            document.getElementById('resUrl').value = url;
+            document.getElementById('resType').value = type;
+            editingResourceKey = key;
+            document.getElementById('editingChapterKey').value = chapterId;
+            document.querySelector('#resourcesSection .btn-save').textContent = 'Update Resource';
+        }
+
+        function addResource() {
+            const chapterId = document.getElementById('editingChapterKey').value || document.getElementById('chapterSelect').value;
+            const title = document.getElementById('resTitle').value.trim();
+            const url = document.getElementById('resUrl').value.trim();
+            const type = document.getElementById('resType').value;
+            if (!title || !url) return alert('Fill all fields');
+            if (editingResourceKey) {
+                db.ref(`resources/${chapterId}/${editingResourceKey}`).update({ title, type, url });
+                editingResourceKey = null;
+                document.querySelector('#resourcesSection .btn-save').textContent = 'Add Resource';
+            } else {
+                db.ref('resources/' + chapterId).push({ title, type, url });
+            }
+            document.getElementById('resTitle').value = '';
+            document.getElementById('resUrl').value = '';
+            document.getElementById('editingChapterKey').value = '';
+        }
+
+        function deleteResource(chapterId, key) {
+            if (confirm('Delete this resource?')) db.ref(`resources/${chapterId}/${key}`).remove();
+        }
+
+        function deleteAllResources() {
+            const chapterId = document.getElementById('chapterSelect').value;
+            if (!chapterId) return alert('Select a chapter');
+            if (confirm('Delete ALL resources for this chapter?')) {
+                db.ref('resources/' + chapterId).remove();
+            }
+                    }
+                // ================== QUIZZES ==================
+        let editingQuestionKey = null;
+        function loadQuizzes() {
+            const id = document.getElementById('chapterSelect').value;
+            if (!id) {
+                document.getElementById('quizList').innerHTML = 'Select a chapter first.';
+                document.getElementById('quizCount').textContent = '';
+                return;
+            }
+            db.ref('quizzes/' + id).on('value', snap => {
+                let html = '';
+                let count = 0;
+                snap.forEach(child => {
+                    const q = child.val();
+                    const key = child.key;
+                    count++;
+                    html += `<div class="item">
+                        <span>${q.question}</span>
+                        <div>
+                            <button class="btn-del" onclick="editQuestion('${id}','${key}','${q.question}','${q.options.join(',')}','${q.correctIndex}')" style="background:#FF9800;">Edit</button>
+                            <button class="btn-del" onclick="deleteQuestion('${id}','${key}')">Del</button>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('quizList').innerHTML = html;
+                document.getElementById('quizCount').textContent = `(${count} items)`;
+            });
+        }
+
+        function editQuestion(chapterId, key, question, optionsStr, correctIndex) {
+            document.getElementById('qQuestion').value = question;
+            document.getElementById('qOptions').value = optionsStr;
+            document.getElementById('qCorrect').value = correctIndex;
+            editingQuestionKey = key;
+            document.getElementById('editingChapterKey').value = chapterId;
+            document.querySelector('#quizSection .btn-save').textContent = 'Update Question';
+        }
+
+        function addQuestion() {
+            const chapterId = document.getElementById('editingChapterKey').value || document.getElementById('chapterSelect').value;
+            const question = document.getElementById('qQuestion').value.trim();
+            const optionsStr = document.getElementById('qOptions').value.trim();
+            const correctIndex = parseInt(document.getElementById('qCorrect').value);
+            if (!question || !optionsStr || isNaN(correctIndex)) return alert('Fill correctly');
+            const options = optionsStr.split(',').map(s => s.trim());
+            if (editingQuestionKey) {
+                db.ref(`quizzes/${chapterId}/${editingQuestionKey}`).update({ question, options, correctIndex });
+                editingQuestionKey = null;
+                document.querySelector('#quizSection .btn-save').textContent = 'Add Question';
+            } else {
+                db.ref('quizzes/' + chapterId).push({ question, options, correctIndex });
+            }
+            document.getElementById('qQuestion').value = '';
+            document.getElementById('qOptions').value = '';
+            document.getElementById('qCorrect').value = '';
+            document.getElementById('editingChapterKey').value = '';
+        }
+
+        function deleteQuestion(chapterId, key) {
+            if (confirm('Delete this question?')) db.ref(`quizzes/${chapterId}/${key}`).remove();
+        }
+
+        function deleteAllQuizzes() {
+            const chapterId = document.getElementById('chapterSelect').value;
+            if (!chapterId) return alert('Select a chapter');
+            if (confirm('Delete ALL quiz questions for this chapter?')) {
+                db.ref('quizzes/' + chapterId).remove();
+            }
+        }
+
+        // ================== FLASHCARDS ==================
+        let editingFlashcardKey = null;
+        function loadFlashcards() {
+            const id = document.getElementById('chapterSelect').value;
+            if (!id) {
+                document.getElementById('flashcardList').innerHTML = 'Select a chapter first.';
+                document.getElementById('flashcardCount').textContent = '';
+                return;
+            }
+            db.ref('flashcards/' + id).on('value', snap => {
+                let html = '';
+                let count = 0;
+                snap.forEach(child => {
+                    const f = child.val();
+                    const key = child.key;
+                    count++;
+                    html += `<div class="item">
+                        <span>${f.question}</span>
+                        <div>
+                            <button class="btn-del" onclick="editFlashcard('${id}','${key}','${f.question}','${f.answer}')" style="background:#FF9800;">Edit</button>
+                            <button class="btn-del" onclick="deleteFlashcard('${id}','${key}')">Del</button>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('flashcardList').innerHTML = html;
+                document.getElementById('flashcardCount').textContent = `(${count} items)`;
+            });
+        }
+
+        function editFlashcard(chapterId, key, question, answer) {
+            document.getElementById('fcQuestion').value = question;
+            document.getElementById('fcAnswer').value = answer;
+            editingFlashcardKey = key;
+            document.getElementById('editingChapterKey').value = chapterId;
+            document.querySelector('#flashcardSection .btn-save').textContent = 'Update Flashcard';
+        }
+
+        function addFlashcard() {
+            const chapterId = document.getElementById('editingChapterKey').value || document.getElementById('chapterSelect').value;
+            const question = document.getElementById('fcQuestion').value.trim();
+            const answer = document.getElementById('fcAnswer').value.trim();
+            if (!question || !answer) return alert('Fill both fields');
+            if (editingFlashcardKey) {
+                db.ref(`flashcards/${chapterId}/${editingFlashcardKey}`).update({ question, answer });
+                editingFlashcardKey = null;
+                document.querySelector('#flashcardSection .btn-save').textContent = 'Add Flashcard';
+            } else {
+                db.ref('flashcards/' + chapterId).push({ question, answer });
+            }
+            document.getElementById('fcQuestion').value = '';
+            document.getElementById('fcAnswer').value = '';
+            document.getElementById('editingChapterKey').value = '';
+        }
+
+       function deleteFlashcard(chapterId, key) {
+            if (confirm('Delete this flashcard?')) db.ref(`flashcards/${chapterId}/${key}`).remove();
+        }
+
+        function deleteAllFlashcards() {
+            const chapterId = document.getElementById('chapterSelect').value;
+            if (!chapterId) return alert('Select a chapter');
+            if (confirm('Delete ALL flashcards for this chapter?')) {
+                db.ref('flashcards/' + chapterId).remove();
+            }
+        }
+
+        // ================== CHAPTER MANAGEMENT ==================
+        const chapterRef = db.ref('chapters');
+
+        function onChapterStreamChange() {
+            const stream = document.getElementById('chapterStream').value;
+            const classSelect = document.getElementById('chapterClass');
+            classSelect.innerHTML = '<option value="">-- Class --</option>';
+            if (stream === 'CBSE') {
+                for (let c of [9,10,11,12]) classSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            } else {
+                for (let c of [11,12]) classSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            }
+            updateSubjectOptions();
+        }
+
+        function updateSubjectOptions() {
+            const stream = document.getElementById('chapterStream').value;
+            const cls = document.getElementById('chapterClass').value;
+            const subjectInput = document.getElementById('chapterSubjectInput');
+            // We'll just keep the input editable; no datalist needed.
+            // But we can auto-fill based on stream/class
+            let subjects = [];
+            if (stream === 'CBSE') {
+                if (cls == 9 || cls == 10) subjects = ['Science','Mathematics'];
+                else subjects = ['Physics','Chemistry','Mathematics','Biology'];
+            } else if (stream === 'JEE') {
+                subjects = ['Physics','Chemistry','Mathematics'];
+            } else if (stream === 'NEET') {
+                subjects = ['Physics','Chemistry','Biology'];
+            }
+            // Optionally set placeholder
+            subjectInput.placeholder = subjects.join(', ') + ' or type new';
+        }
+
+        document.getElementById('chapterClass').addEventListener('change', updateSubjectOptions);
+
+        function loadChapters() {
+            chapterRef.once('value', snap => {
+                const list = document.getElementById('chapterList');
+                list.innerHTML = '';
+                const data = snap.val() || {};
+                for (let key in data) {
+                    const ch = data[key];
+                    list.innerHTML += `<div class="item">
+                        <span>${ch.stream} - ${ch.class} - ${ch.subject} - ${ch.name} (ID: ${key})</span>
+                        <div>
+                            <button class="btn-del" onclick="editChapter('${key}','${ch.name}','${ch.stream}','${ch.class}','${ch.subject}')">Edit</button>
+                            <button class="btn-del" style="background:#D32F2F" onclick="deleteChapter('${key}')">Del</button>
+                        </div>
+                    </div>`;
+                }
+            });
+        }
+
+        function editChapter(key, name, stream, cls, subject) {
+            document.getElementById('chapterName').value = name;
+            document.getElementById('chapterStream').value = stream;
+            onChapterStreamChange();
+            setTimeout(() => {
+                document.getElementById('chapterClass').value = cls;
+                updateSubjectOptions();
+                document.getElementById('chapterSubjectInput').value = subject;
+            }, 200);
+            document.getElementById('editingChapterKey2').value = key;
+        }
+
+        function saveChapter() {
+            const name = document.getElementById('chapterName').value.trim();
+            const stream = document.getElementById('chapterStream').value;
+            const cls = document.getElementById('chapterClass').value;
+            const subject = document.getElementById('chapterSubjectInput').value.trim();
+            if (!name || !stream || !cls || !subject) return alert('Fill all fields');
+            const key = document.getElementById('editingChapterKey2').value;
+            if (key) {
+                chapterRef.child(key).update({ name, stream, class: cls, subject });
+            } else {
+                chapterRef.push({ name, stream, class: cls, subject });
+            }
+            document.getElementById('editingChapterKey2').value = '';
+            document.getElementById('chapterName').value = '';
+            document.getElementById('chapterSubjectInput').value = '';
+            loadChapters();
+        }
+
+        function deleteChapter(key) {
+            if (confirm('Delete this chapter? Related resources/quizzes/flashcards will also be deleted.')) {
+                chapterRef.child(key).remove();
+                db.ref('resources/' + key).remove();
+                db.ref('quizzes/' + key).remove();
+                db.ref('flashcards/' + key).remove();
+                loadChapters();
+            }
+        }
+
+        loadChapters();
+        onStreamChange();
     </script>
 </body>
 </html>
